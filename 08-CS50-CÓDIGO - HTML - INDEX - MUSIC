@@ -1,0 +1,30 @@
+<! DOCTYPE html>
+
+<html lang="pt">
+    
+<link href = "styles.css" rel = "stylesheet" >
+
+        <main style = "font-size: medium; text-align: center;" >
+            Bem vindo (a) ao youtube de Katy Perry!
+        </main>
+        
+                <head>
+                <title>link</title>
+                        </head>
+                        <body>
+                           Visit <a href="https://www.youtube.com/channel/UCYvmuw-JtVrTZQ-7Y4kd63Q">Katy Perry </a>.
+                        </body>
+                        
+                        
+        <head>
+        <title>Katy Perry - Firework</title
+        <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+        </head>
+        
+        <p>
+            <body>
+            <iframe <iframe width="853" height="480" src="https://www.youtube.com/embed/iQPntUPNDlQ?start=5" title="YouTube video player" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+            </body>
+        </p>
+        
+</html>
