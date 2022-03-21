@@ -1,0 +1,24 @@
+<! DOCTYPE html>
+
+<html lang="pt">
+
+        <body>
+            <header style = "font-size: large; text-align: center;" >
+                                    Roberta Seneda Vilella
+            </header>
+        <p>
+            <main style = "font-size: medium; text-align: center;" >
+                            Bem vindo (a) a minha primeira homepage!
+            <footer style = "font-size: small; text-align: center;" >
+                         
+                        <head>
+                        <title>link</title>
+                        </head>
+                        <body>
+                       Visit <a href="https://www.instagram.com/seneda_vilella">Instragam Seneda</a>.
+                        </body>
+                         
+            </footer>
+            </main>
+      </body>
+</html>
