@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+
+<html lang="pt">
+    <head>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap" rel="stylesheet">
+        <link href="styles.css" rel="stylesheet">
+        <title>Trivia!</title>
+        <script>
+            
+            document.addEventListener('DOMContentLoaded', function() {
+                let correct = document.querySelector('.correct');
+                correct.addEventListener('click', function() {
+                    correct.style.backgroundColor = 'green';
+                    document.querySelector('#feedback1').innerHTML = 'Correto!';
+                });
+
+                let incorrects = document.querySelectorAll('.incorrect');
+                for (let i = 0; i < incorrects.length; i++) {
+                    incorrects[i].addEventListener('click', function() {
+                        incorrects[i].style.backgroundColor = 'red';
+                        document.querySelector('#feedback1').innerHTML = 'Incorreto';
+                    });
+                }
+
+                document.querySelector('#check').addEventListener('click', function() {
+                    let input = document.querySelector('input');
+                    if (input.value === '1977') {
+                        input.style.backgroundColor = 'green';
+                        document.querySelector('#feedback2').innerHTML = 'Correto!';
+                    } else {
+                        input.style.backgroundColor = 'red';
+                        document.querySelector('#feedback2').innerHTML = 'Incorreto';
+                    }
+                })
+            })
+
+        </script>
+    </head>
+    <body>
+        <div class="header">
+            <h1>Trivia!</h1>
+        </div>
+
+        <div class="container">
+            <div class="section">
+                <h2>Parte 1: Múltipla Escolha</h2>
+                <hr>
+
+                <h3>Marque a alternativa que indica quais os 3 tipos biomas que encontado no Estado de Mato Grosso.</h3>
+                <button class="incorrect">a) Caatinga, Mata dos Cocais e Mata Atlântica;</button>
+                <button class="incorrect">b) Mata de Araucárias, Zona Litorânea e Manguezal;</button>
+                <button class="correct">c) Floresta Amazônica, Cerrado e Pantanal;</button>
+                <button class="incorrect">d) Floresta Amazônica, Pantanal e Caatinga.</button>
+                <p id="feedback1"></p>
+                <p><a href="resposta1.html">Explicação</a></p>
+
+            </div>
+
+            <div class="section">
+                <h2>Parte 2: Digite a resposta</h2>
+                <hr>
+
+                <h3>Em que ano o Estado de MT foi dividido e criado o Estado de MS?</h3>
+                <input type="text"></input>
+                <button id="check">Check Answer</button>
+                <p id="feedback2"></p>
+                <p><a href="resposta2.html">Explicação</a></p>
+
+            </div>
+        </div>
+    </body>
+</html>
