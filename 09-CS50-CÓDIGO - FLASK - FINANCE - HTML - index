@@ -1,0 +1,42 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+    <table>
+        <thead>
+            <th>Symbol</th>
+            <th>Name</th>
+            <th>Shares</th>
+            <th>Price</th>
+            <th>total</th>
+        </thead>
+        <tbody>
+            {% for key, value in stocks.items() if not sotcks %}
+            <tr>
+                <td>{{ value.symbol }}</td>
+                <td>{{ value.name }}</td>
+                <td>{{ value.shares }}</td>
+                <td>{{ value.price|usd }}</td>
+                <td>{{ value.total|usd }}</td>
+            </tr>
+            {% endfor %}
+            <tr>
+                <td>CASH</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td>{{ cash|usd }}</td>
+            </tr>
+            <tr>
+                <td style="font-weight:bold;">TOTAL</td>
+                <td></td>
+                <td></td>
+                <td></td>
+                <td style="font-weight:bold;">{{ total|usd }}</td>
+            </tr>
+        </tbody>
+    </table>
+{% endblock %}
