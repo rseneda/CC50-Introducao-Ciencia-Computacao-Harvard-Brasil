@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Register
+{% endblock %}
+
+{% block main %}
+    <table>
+        <thead>
+            <th>Symbol</th>
+            <th>Shares</th>
+            <th>Price</th>
+            <th>Transacted</th>
+        </thead>
+        <tbody>
+            {% for item in transactions %}
+            <tr>
+                <td>{{ item.symbol }}</td>
+                <td>{{ item.shares }}</td>
+                <td>{{ item.price }}</td>
+                <td>{{ item.time }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
