@@ -1,0 +1,262 @@
+import os
+
+from cs50 import SQL
+from flask import Flask, flash, redirect, render_template, request, session
+from flask_session import Session
+from tempfile import mkdtemp
+from werkzeug.exceptions import default_exceptions, HTTPException, InternalServerError
+from werkzeug.security import check_password_hash, generate_password_hash
+from helpers import apology, login_required, lookup, usd
+from datetime import datetime
+
+# CONFIGURAÇÃO APLICAÇÃO
+app = Flask(__name__)
+
+# RECARREGAR AUTOMATICAMENTE
+app.config["TEMPLATES_AUTO_RELOAD"] = True
+
+# NÃO ARMAZENAR CACHE
+@app.after_request
+def after_request(response):
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Expires"] = 0
+    response.headers["Pragma"] = "no-cache"
+    return response
+
+# FILTRO
+app.jinja_env.filters["usd"] = usd
+
+# SISTEMA DE ARQUIVOS
+app.config["SESSION_FILE_DIR"] = mkdtemp()
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
+
+# BIBLIOTECA CS50 - SQLite
+db = SQL("sqlite:///finance.db")
+
+# DEFINIR CHAVE API
+if not os.environ.get("API_KEY"):
+    raise RuntimeError("API_KEY not set")
+
+@app.route("/")
+@login_required
+def index():
+    #PREÇO
+    stocks={}
+    #LISTA DE AÇÕES
+    stock_list = db.execute("SELECT symbol FROM (SELECT * FROM transactions GROUP BY symbol) WHERE user_id=?", session["user_id"])
+    #VALORES
+    cash = db.execute("SELECT cash FROM users where id=?", session["user_id"])[0]["cash"]
+    #TOTAL AGREGADO
+    total = 0
+
+    #PESQUISA PREÇO ATUAL
+
+    for stock in stock_list:
+        if db.execute("SELECT SUM(shares) FROM transactions WHERE symbol=?", stock["symbol"])[0]["SUM(shares)"]>0:
+            info = lookup(stock["symbol"])
+            info["shares"] = db.execute("SELECT SUM(shares) FROM transactions WHERE symbol=?", info["symbol"])[0]["SUM(shares)"]
+            info["total"] = info["shares"] * info["price"]
+            total += info["total"]
+            stocks[stock["symbol"]] = info
+
+    total += cash
+
+    return render_template("index.html", stocks=stocks, cash=cash, total=total)
+
+@app.route("/buy", methods=["GET", "POST"])
+@login_required
+def buy():
+    if request.method == "POST":
+
+        #VARIAVEIS LOGICAS PARA TESTE
+        stock = lookup(request.form.get("symbol"))
+        if not stock:
+            return apology("must provide valid symbol", 400)
+        cash = db.execute("SELECT cash FROM users WHERE id=?", session["user_id"])[0]["cash"]
+        try:
+            shares = int(request.form.get("shares"))
+        except:
+            return apology("must provide integer amount", 400)
+            
+        #ERROS
+        if shares < 1:
+            return apology("must provide valid quantity", 400)
+        if (shares*stock["price"]) > cash:
+            return apology("Not enough money for the buy", 400)
+
+        #NÃO CONTER ERROS - USUÁRIO COMPRARÁ AÇÕES - INFORMAÇÕES SOBRE AÇÕES BANCO DE DADOS
+        db.execute("INSERT INTO transactions (user_id, symbol, price, shares, time, type) VALUES (?, ?, ?, ?, ?, ?)", session["user_id"], stock["symbol"], stock["price"], shares, datetime.now(), "Bought")
+
+        #VALOR ATUAL
+        db.execute("UPDATE users SET cash=? WHERE id=?", cash-(shares*stock["price"]), session["user_id"])
+
+        #REDIRECIONA INDICE
+        return redirect("/")
+
+    return render_template("buy.html")
+
+@app.route("/history")
+@login_required
+def history():
+     #LISTA TODAS AÇÕES
+    stocks={}
+    transactions = db.execute("SELECT * FROM transactions WHERE user_id=? ORDER BY time", session["user_id"])
+
+    return render_template("history.html", transactions=transactions)
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """Log user in"""
+
+    #ESQUECER USUÁRIO
+    session.clear()
+
+    #CORREIOS
+    if request.method == "POST":
+
+        #NOME USUÁRIO ENVIADO
+        if not request.form.get("username"):
+            return apology("must provide username", 400)
+
+        #SENHA ENVIADA
+        elif not request.form.get("password"):
+            return apology("must provide password", 400)
+
+        #BANCO DE DADOS CONSULTA USUÁRIO
+        rows = db.execute("SELECT * FROM users WHERE username = ?", request.form.get("username"))
+
+
+        #USUÁRIO E SENHA - EXISTENTE E CORRETOS
+        if len(rows) != 1 or not check_password_hash(rows[0]["hash"], request.form.get("password")):
+            return apology("invalid username and/or password", 400)
+
+        #LEMBRAR LOGIN
+        session["user_id"] = rows[0]["id"]
+
+        #PAGINA INICIAL
+        return redirect("/")
+
+    #USUÁRIO ALCANÇOU ROTA VIA GET
+    else:
+        return render_template("login.html")
+
+@app.route("/logout")
+def logout():
+    """Log user out"""
+
+    #ESQUECER USUÁRIO
+    session.clear()
+
+    #REDIRECIONAR LOGIN
+    return redirect("/")
+
+@app.route("/quote", methods=["GET", "POST"])
+@login_required
+def quote():
+    if request.method == "POST":
+        stock = lookup(request.form.get("symbol"))
+        if not stock:
+            return apology("must provide valid symbol", 400)
+        return render_template("quoted.html", stock=stock)
+    return render_template("quote.html")
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+
+    if request.method == "POST":
+
+        username = request.form.get("username")
+        password = request.form.get("password")
+        number=[0,1,2,3,4,5,6,7,8,9]
+        valid_symbols = "!@#$%^&*()_-+={}[]"
+        count_number = 0
+
+    #ERROS DE SENHA
+        hashed = generate_password_hash(password)
+        rows = db.execute("SELECT username FROM users WHERE username=?", username)
+
+        #MANIPULAR ERROS
+        if not username:
+            return apology("must provide username", 400)
+
+        if password != request.form.get("confirmation") or not password:
+            return apology("must provide valid password", 400)
+
+        if len(rows) > 0:
+            return apology("Username already used", 400)
+
+        #ADICIONAR INFORMAÇÃO
+        db.execute("INSERT INTO users (username, hash) VALUES (?,?)", username, hashed)
+
+        return redirect("/")
+
+    """Register user"""
+    return render_template("register.html")
+
+@app.route("/sell", methods=["GET", "POST"])
+@login_required
+def sell():
+
+    symbols = db.execute("SELECT symbol FROM transactions GROUP BY symbol HAVING user_id=?", session["user_id"])
+    stock_list = []
+
+    for item in symbols:
+            stock_list.append(item["symbol"])
+    
+    #CHECAR PARTICIPAÇÕES
+    for item in stock_list:
+        if db.execute("SELECT SUM(shares) FROM transactions WHERE symbol=? GROUP BY symbol HAVING user_id=?", item, session["user_id"])[0]["SUM(shares)"] < 1:
+            print(stock_list)
+            print(item)
+            stock_list.remove(item)
+            print(stock_list)
+
+    if request.method == "POST":
+        try:
+            shares = int(request.form.get("shares"))
+        except:
+            return apology("must provide integer amount", 400)
+
+        stock = lookup(request.form.get("symbol"))
+
+        if not stock:
+            return apology("must provide valid symbol", 400)
+
+        for item in symbols:
+            stock_list.append(item["symbol"])
+
+        if stock["symbol"] not in stock_list:
+            return apology("must provide valid symbol", 400)
+        
+        #VARIÁVEIS TESTE
+        cash = db.execute("SELECT cash FROM users WHERE id=?", session["user_id"])[0]["cash"]
+        hold = db.execute("SELECT SUM(shares) FROM transactions WHERE symbol=? GROUP BY symbol HAVING user_id=?", stock["symbol"], session["user_id"])[0]["SUM(shares)"]
+
+        #CHECAR AÇÕES INTERIAS - ERRO DE MANUSEIO
+        if shares < 1:
+            return apology("must provide valid quantity", 400)
+        if hold < shares:
+            return apology("Not enough stocks for the sell", 400)
+
+        #PASSAR TESTE - USUÁRIO COMPRA AÇÕES - INFORMAÇÕES AÇÕES BANCO DE DADOS
+        db.execute("INSERT INTO transactions (user_id, symbol, price, shares, time, type) VALUES (?, ?, ?, ?, ?, ?)", session["user_id"], stock["symbol"], stock["price"], -shares, datetime.now(), "Sold")
+
+        #VALOR ATUAL
+        db.execute("UPDATE users SET cash=? WHERE id=?", cash+(shares*stock["price"]), session["user_id"])
+
+        #REDIRECIONA PAGINA INICIAL
+        return redirect("/")
+
+    return render_template("sell.html", symbols=stock_list)
+
+def errorhandler(e):
+    """Handle error"""
+    if not isinstance(e, HTTPException):
+        e = InternalServerError()
+    return apology(e.name, e.code)
+
+#LISTA DE ERROS
+for code in default_exceptions:
+    app.errorhandler(code)(errorhandler)
