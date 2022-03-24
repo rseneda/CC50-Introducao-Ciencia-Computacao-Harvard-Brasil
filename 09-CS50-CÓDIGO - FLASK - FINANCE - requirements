@@ -1,0 +1,11 @@
+cs50
+Flask
+Flask-Session
+requests
+
+$ export API_KEY=value
+$ export API_KEY=pk_b7c56fd3e03244ceb48588c4f2503a53
+$ flask run
+
+https://finance.cs50.net/
+Não use uma senha que você usa em outros sites.
